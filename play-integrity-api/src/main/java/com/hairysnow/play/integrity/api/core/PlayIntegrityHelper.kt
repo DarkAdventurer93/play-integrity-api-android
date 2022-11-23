@@ -13,6 +13,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import kotlin.math.E
 import kotlin.math.floor
 
 /**
@@ -95,7 +96,7 @@ class PlayIntegrityHelper(
         okHttpClientBuilder.build().newCall(request)
             .enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    callbackFailure(e, onIntegrityResultListener)
+                    callbackInternalError(e, onIntegrityResultListener)
                 }
 
                 override fun onResponse(call: Call, response: Response) {
@@ -116,89 +117,115 @@ class PlayIntegrityHelper(
                                 )
                             } catch (e: Exception) {
                                 e.printStackTrace()
-                                callbackFailure(e, onIntegrityResultListener)
+                                callbackInternalError(e, onIntegrityResultListener)
                             }
-                        } ?: callbackFailure(Exception(), onIntegrityResultListener)
+                        } ?: callbackInternalError(null, onIntegrityResultListener)
                 }
             })
+    }
+
+    private fun callbackInternalError(
+        e: Exception?,
+        onIntegrityResultListener: OnIntegrityResultListener?
+    ) {
+        callbackFailure(
+            IntegrityException(
+                IntegrityErrorCode.INTERNAL_ERROR,
+                e?.message ?: "Unknown Error"
+            ), onIntegrityResultListener
+        )
     }
 
     private fun callbackFailure(
         e: Exception,
         onIntegrityResultListener: OnIntegrityResultListener?
     ) {
-        var errorMessage = "Unknown Error"
-        var errorCode = IntegrityErrorCode.INTERNAL_ERROR
-        e.message?.let {
-            //Pretty junk way of getting the error code but it works
-            errorCode =
-                it.replace("\n".toRegex(), "").replace(":(.*)".toRegex(), "").toInt()
-            errorMessage = when (errorCode) {
-                IntegrityErrorCode.API_NOT_AVAILABLE ->
-                    "Integrity API is not available.\n\nThe Play Store version might be old, try updating it."
-
-                IntegrityErrorCode.APP_NOT_INSTALLED ->
-                    "The calling app is not installed.\n\nThis shouldn't happen. If it does please open an issue on Github."
-
-                IntegrityErrorCode.APP_UID_MISMATCH ->
-                    "The calling app UID (user id) does not match the one from Package Manager.\n\nThis shouldn't happen. If it does please open an issue on Github."
-
-                IntegrityErrorCode.CANNOT_BIND_TO_SERVICE ->
-                    "Binding to the service in the Play Store has failed.\n\nThis can be due to having an old Play Store version installed on the device."
-
-                IntegrityErrorCode.GOOGLE_SERVER_UNAVAILABLE ->
-                    "Unknown internal Google server error."
-
-                IntegrityErrorCode.INTERNAL_ERROR ->
-                    "Unknown internal error."
-
-                IntegrityErrorCode.NETWORK_ERROR ->
-                    "No available network is found.\n\nPlease check your connection."
-
-                IntegrityErrorCode.NO_ERROR ->
-                    "No error has occurred.\n\n" +
-                            "If you ever get this, congrats, I have no idea what it means."
-
-                IntegrityErrorCode.NONCE_IS_NOT_BASE64 ->
-                    "Nonce is not encoded as a base64 web-safe no-wrap string.\n\n" +
-                            "This shouldn't happen. If it does please open an issue on Github."
-
-                IntegrityErrorCode.NONCE_TOO_LONG ->
-                    "Nonce length is too long.\n" +
-                            "This shouldn't happen. If it does please open an issue on Github."
-
-                IntegrityErrorCode.NONCE_TOO_SHORT ->
-                    "Nonce length is too short.\n" +
-                            "This shouldn't happen. If it does please open an issue on Github."
-
-                IntegrityErrorCode.PLAY_SERVICES_NOT_FOUND ->
-                    "Play Services is not available or version is too old.\n\n" +
-                            "Try updating Google Play Services."
-
-                IntegrityErrorCode.PLAY_STORE_ACCOUNT_NOT_FOUND ->
-                    "No Play Store account is found on device.\n\n" +
-                            "Try logging into Play Store."
-
-                IntegrityErrorCode.PLAY_STORE_NOT_FOUND ->
-                    "No Play Store app is found on device or not official version is installed.\n\n" +
-                            "This app can't work without Play Store."
-
-                IntegrityErrorCode.TOO_MANY_REQUESTS ->
-                    "The calling app is making too many requests to the API and hence is throttled.\n" +
-                            "\n" +
-                            "This shouldn't happen. If it does please open an issue on Github."
-
-                else -> "Unknown Error"
-            }
+        e.takeIf {
+            it is IntegrityException
+        }?.let {
+            val exp = it as IntegrityException
             logE(
                 String.format(
                     "integrityTokenResponse failure, errorCode:%s, errorMessage:%s",
-                    errorCode,
-                    errorMessage
+                    exp.errorCode,
+                    exp.message
                 )
             )
-        } ?: logE("integrityTokenResponse failure unknown error:$errorMessage")
-        onIntegrityResultListener?.onFailure(IntegrityException(errorCode, errorMessage))
+            onIntegrityResultListener?.onFailure(exp)
+        } ?: let {
+            var errorMessage = "Unknown Error"
+            var errorCode = IntegrityErrorCode.INTERNAL_ERROR
+            e.message?.let {
+                //Pretty junk way of getting the error code but it works
+                errorCode =
+                    it.replace("\n".toRegex(), "").replace(":(.*)".toRegex(), "").toInt()
+                errorMessage = when (errorCode) {
+                    IntegrityErrorCode.API_NOT_AVAILABLE ->
+                        "Integrity API is not available.\n\nThe Play Store version might be old, try updating it."
+
+                    IntegrityErrorCode.APP_NOT_INSTALLED ->
+                        "The calling app is not installed.\n\nThis shouldn't happen. If it does please open an issue on Github."
+
+                    IntegrityErrorCode.APP_UID_MISMATCH ->
+                        "The calling app UID (user id) does not match the one from Package Manager.\n\nThis shouldn't happen. If it does please open an issue on Github."
+
+                    IntegrityErrorCode.CANNOT_BIND_TO_SERVICE ->
+                        "Binding to the service in the Play Store has failed.\n\nThis can be due to having an old Play Store version installed on the device."
+
+                    IntegrityErrorCode.GOOGLE_SERVER_UNAVAILABLE ->
+                        "Unknown internal Google server error."
+
+                    IntegrityErrorCode.INTERNAL_ERROR ->
+                        "Unknown internal error."
+
+                    IntegrityErrorCode.NETWORK_ERROR ->
+                        "No available network is found.\n\nPlease check your connection."
+
+                    IntegrityErrorCode.NO_ERROR ->
+                        "No error has occurred.\n\n" +
+                                "If you ever get this, congrats, I have no idea what it means."
+
+                    IntegrityErrorCode.NONCE_IS_NOT_BASE64 ->
+                        "Nonce is not encoded as a base64 web-safe no-wrap string.\n\n" +
+                                "This shouldn't happen. If it does please open an issue on Github."
+
+                    IntegrityErrorCode.NONCE_TOO_LONG ->
+                        "Nonce length is too long.\n" +
+                                "This shouldn't happen. If it does please open an issue on Github."
+
+                    IntegrityErrorCode.NONCE_TOO_SHORT ->
+                        "Nonce length is too short.\n" +
+                                "This shouldn't happen. If it does please open an issue on Github."
+
+                    IntegrityErrorCode.PLAY_SERVICES_NOT_FOUND ->
+                        "Play Services is not available or version is too old.\n\n" +
+                                "Try updating Google Play Services."
+
+                    IntegrityErrorCode.PLAY_STORE_ACCOUNT_NOT_FOUND ->
+                        "No Play Store account is found on device.\n\n" +
+                                "Try logging into Play Store."
+
+                    IntegrityErrorCode.PLAY_STORE_NOT_FOUND ->
+                        "No Play Store app is found on device or not official version is installed.\n\n" +
+                                "This app can't work without Play Store."
+
+                    IntegrityErrorCode.TOO_MANY_REQUESTS ->
+                        "The calling app is making too many requests to the API and hence is throttled.\n" +
+                                "\n" +
+                                "This shouldn't happen. If it does please open an issue on Github."
+
+                    else -> "Unknown Error"
+                }
+                logE(
+                    String.format(
+                        "integrityTokenResponse failure, errorCode:%s, errorMessage:%s",
+                        errorCode,
+                        errorMessage
+                    )
+                )
+            } ?: logE("integrityTokenResponse failure unknown error:$errorMessage")
+            onIntegrityResultListener?.onFailure(IntegrityException(errorCode, errorMessage))
+        }
     }
 
 
