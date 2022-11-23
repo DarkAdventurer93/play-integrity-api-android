@@ -7,7 +7,7 @@ package com.hairysnow.play.integrity.api.core.result
  */
 class IntegrityResult {
     /*
-    * 应用和证书与 Google Play 分发的版本相符(是否为正品应用，是否被篡改过)
+    * 应用和签名与 Google Play 分发的版本相符(是否为正品应用，是否被篡改过)
     * */
     var isPlayRecognized = false
 
