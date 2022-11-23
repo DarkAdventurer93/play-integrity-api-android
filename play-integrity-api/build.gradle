@@ -5,11 +5,11 @@ plugins {
 
 android {
     namespace 'com.hairysnow.play.integrity.api.core'
-    compileSdk 33
+    compileSdk 31
 
     defaultConfig {
         minSdk 21
-        targetSdk 33
+        targetSdk 31
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -32,7 +32,7 @@ android {
 
 dependencies {
 
-    implementation 'androidx.core:core-ktx:1.9.0'
+    implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'com.google.android.play:integrity:1.0.2'
     implementation 'com.squareup.okhttp3:okhttp:4.10.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
