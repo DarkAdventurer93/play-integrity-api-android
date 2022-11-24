@@ -1,9 +1,9 @@
 # play-integrity-api-android
 <p>
-Play Integrity API（https://developer.android.com/google/play/integrity/overview）的Android代码示例，见Sample模块
+Play Integrity API（https://developer.android.com/google/play/integrity/overview
 </p>
 <p>
-起因是谷歌要求从SafetyNet API迁移至Play Integrity API
+的Android代码示例，见Sample模块，起因是谷歌要求从SafetyNet API迁移至Play Integrity API
 </p>
 <p>
 后端代码见https://github.com/HairySnow/play-integrity-api-java
