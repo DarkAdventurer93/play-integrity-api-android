@@ -54,16 +54,14 @@ class PlayIntegrityHelper(
     ) {
         val params = HashMap<String, String>().apply {
             put(
-                "applicationName", try {
+                "applicationName", kotlin.runCatching {
                     integrityConfiguration.context.resources.getString(
                         integrityConfiguration.context.packageManager.getPackageInfo(
                             integrityConfiguration.context.packageName,
                             0
                         ).applicationInfo.labelRes
                     )
-                } catch (e: Exception) {
-                    ""
-                }
+                }.getOrElse { "" }
             )
             put("packageName", integrityConfiguration.context.packageName)
             put("integrityToken", integrityToken)
@@ -106,26 +104,20 @@ class PlayIntegrityHelper(
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    response.takeIf {
-                        it.isSuccessful && it.body != null
+                    kotlin.runCatching {
+                        val result = response.body!!.string()
+                        val jsonObject = JSONObject(result)
+                        onIntegrityResultListener?.onSuccess(
+                            IntegrityResult(
+                                jsonObject.optBoolean("isPlayRecognized"),
+                                jsonObject.optBoolean("isMeetsDeviceIntegrity"),
+                                jsonObject.optBoolean("isMeetsBasicIntegrity")
+                            ),
+                            result
+                        )
+                    }.onFailure {
+                        callbackInternalError(null, onIntegrityResultListener)
                     }
-                        ?.let {
-                            try {
-                                val result = it.body!!.string()
-                                val jsonObject = JSONObject(result)
-                                onIntegrityResultListener?.onSuccess(
-                                    IntegrityResult(
-                                        jsonObject.optBoolean("isPlayRecognized"),
-                                        jsonObject.optBoolean("isMeetsDeviceIntegrity"),
-                                        jsonObject.optBoolean("isMeetsBasicIntegrity")
-                                    ),
-                                    result
-                                )
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                callbackInternalError(e, onIntegrityResultListener)
-                            }
-                        } ?: callbackInternalError(null, onIntegrityResultListener)
                 }
             })
     }
