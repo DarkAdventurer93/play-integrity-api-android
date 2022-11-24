@@ -1,5 +1,6 @@
 package com.hairysnow.play.integrity.api.core
 
+import android.util.ArrayMap
 import android.util.Log
 import com.google.android.play.core.integrity.IntegrityManagerFactory
 import com.google.android.play.core.integrity.IntegrityTokenRequest
@@ -51,8 +52,8 @@ class PlayIntegrityHelper(
         integrityToken: String,
         onIntegrityResultListener: OnIntegrityResultListener?
     ) {
-        val requestBody = FormBody.Builder()
-            .add(
+        val params = HashMap<String, String>().apply {
+            put(
                 "applicationName", try {
                     integrityConfiguration.context.resources.getString(
                         integrityConfiguration.context.packageManager.getPackageInfo(
@@ -64,10 +65,15 @@ class PlayIntegrityHelper(
                     ""
                 }
             )
-            .add("packageName", integrityConfiguration.context.packageName)
-            .add("integrityToken", integrityToken)
+            put("packageName", integrityConfiguration.context.packageName)
+            put("integrityToken", integrityToken)
+        }
+        integrityConfiguration.additionalParams?.map {
+            params.put(it.key, it.value)
+        }
+        val requestBody = FormBody.Builder()
             .apply {
-                integrityConfiguration.additionalParams?.map {
+                params.map {
                     add(it.key, it.value)
                 }
             }
@@ -246,6 +252,11 @@ class PlayIntegrityHelper(
     }
 
     interface OnIntegrityResultListener {
+        /**
+         * 请求后台校验integrity Token成功
+         * @param integrityResult 校验结果
+         * @param responseString 返回的数据，若需自定义成功状态可以使用
+         */
         fun onSuccess(integrityResult: IntegrityResult, responseString: String)
         fun onFailure(e: IntegrityException)
     }
