@@ -1,6 +1,5 @@
 package com.hairysnow.play.integrity.api.core
 
-import android.util.ArrayMap
 import android.util.Log
 import com.google.android.play.core.integrity.IntegrityManagerFactory
 import com.google.android.play.core.integrity.IntegrityTokenRequest
@@ -10,11 +9,11 @@ import com.hairysnow.play.integrity.api.core.configuration.IntegrityConfiguratio
 import com.hairysnow.play.integrity.api.core.exception.IntegrityException
 import com.hairysnow.play.integrity.api.core.result.IntegrityResult
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import kotlin.math.E
 import kotlin.math.floor
 
 /**
@@ -69,13 +68,21 @@ class PlayIntegrityHelper(
         integrityConfiguration.additionalParams?.map {
             params.put(it.key, it.value)
         }
-        val requestBody = FormBody.Builder()
-            .apply {
+        val requestBody = if (integrityConfiguration.isJsonType) {
+            RequestBody.create("application/json; charset=utf-8".toMediaType(), JSONObject().apply {
                 params.map {
-                    add(it.key, it.value)
+                    put(it.key, it.value)
                 }
-            }
-            .build()
+            }.toString())
+        } else {
+            FormBody.Builder()
+                .apply {
+                    params.map {
+                        add(it.key, it.value)
+                    }
+                }
+                .build()
+        }
         val request = Request.Builder()
             .url(integrityConfiguration.backendUrl)
             .post(requestBody)
