@@ -48,7 +48,7 @@ class PlayIntegrityHelper(
         }
     }
 
-    private fun requestBackendIntegrityValidation(
+    fun requestBackendIntegrityValidation(
         integrityToken: String,
         onIntegrityResultListener: OnIntegrityResultListener?
     ) {
