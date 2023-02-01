@@ -16,6 +16,7 @@ class IntegrityConfiguration private constructor(
     val timeout: Long,
     val loggable: Boolean,
     val additionalParams: HashMap<String, String>?,
+    val additionalHeaders: HashMap<String, String>?,
     val sslSocketFactory: SSLSocketFactory?,
     val trustManager: X509TrustManager?,
     val isJsonType: Boolean
@@ -30,6 +31,8 @@ class IntegrityConfiguration private constructor(
         var loggable: Boolean = false,
         /*想要多给后端传的参数*/
         var additionalParams: HashMap<String, String>? = null,
+        /*想要多给后端传的Headers*/
+        var additionalHeaders: HashMap<String, String>? = null,
         /*sslSocketFactory，用于自定义cert pining*/
         var sslSocketFactory: SSLSocketFactory?,
         /*trustManager，用于自定义cert pining*/
@@ -41,7 +44,7 @@ class IntegrityConfiguration private constructor(
             context: Context,
             backendUrl: String
         ) : this(
-            context.applicationContext, backendUrl, 10_000, false, null, null, null, false
+            context.applicationContext, backendUrl, 10_000, false, null,null, null, null, false
         )
 
         constructor(
@@ -51,7 +54,7 @@ class IntegrityConfiguration private constructor(
             loggable: Boolean,
             isJsonType: Boolean
         ) : this(
-            context.applicationContext, backendUrl, timeout, loggable, null, null, null, isJsonType
+            context.applicationContext, backendUrl, timeout, loggable, null,null, null, null, isJsonType
         )
 
         fun context(context: Context) = apply { this.context = context.applicationContext }
@@ -64,6 +67,9 @@ class IntegrityConfiguration private constructor(
 
         fun additionalParams(additionalParams: HashMap<String, String>?) =
             apply { this.additionalParams = additionalParams }
+
+        fun additionalHeaders(additionalHeaders: HashMap<String, String>?) =
+            apply { this.additionalHeaders = additionalHeaders }
 
         fun sslSocketFactory(sslSocketFactory: SSLSocketFactory?) =
             apply { this.sslSocketFactory = sslSocketFactory }
@@ -80,6 +86,7 @@ class IntegrityConfiguration private constructor(
             timeout,
             loggable,
             additionalParams,
+            additionalHeaders,
             sslSocketFactory,
             trustManager,
             isJsonType

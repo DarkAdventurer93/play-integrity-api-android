@@ -83,8 +83,13 @@ class PlayIntegrityHelper(
                 }
                 .build()
         }
-        val request = Request.Builder()
+
+        val requestBuilder = Request.Builder()
             .url(integrityConfiguration.backendUrl)
+        integrityConfiguration.additionalHeaders?.map {
+            requestBuilder.addHeader(it.key, it.value)
+        }
+        val request = requestBuilder
             .post(requestBody)
             .build()
         val okHttpClientBuilder = OkHttpClient.Builder()
