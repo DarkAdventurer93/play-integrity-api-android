@@ -167,8 +167,9 @@ class PlayIntegrityHelper(
             var errorCode = IntegrityErrorCode.INTERNAL_ERROR
             e.message?.let {
                 //Pretty junk way of getting the error code but it works
-                errorCode =
+                errorCode = kotlin.runCatching {
                     it.replace("\n".toRegex(), "").replace(":(.*)".toRegex(), "").toInt()
+                }.getOrElse { IntegrityErrorCode.API_NOT_AVAILABLE }
                 errorMessage = when (errorCode) {
                     IntegrityErrorCode.API_NOT_AVAILABLE ->
                         "Integrity API is not available.\n\nThe Play Store version might be old, try updating it."
