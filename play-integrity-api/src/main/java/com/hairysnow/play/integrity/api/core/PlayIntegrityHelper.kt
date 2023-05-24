@@ -161,7 +161,7 @@ class PlayIntegrityHelper(
                     exp.message
                 )
             )
-            onIntegrityResultListener?.onFailure(exp)
+            onIntegrityResultListener?.onFailure(exp, exp)
         } ?: let {
             var errorMessage = "Unknown Error"
             var errorCode = IntegrityErrorCode.INTERNAL_ERROR
@@ -235,7 +235,7 @@ class PlayIntegrityHelper(
                     )
                 )
             } ?: logE("integrityTokenResponse failure unknown error:$errorMessage")
-            onIntegrityResultListener?.onFailure(IntegrityException(errorCode, errorMessage))
+            onIntegrityResultListener?.onFailure(IntegrityException(errorCode, errorMessage), e)
         }
     }
 
@@ -263,7 +263,7 @@ class PlayIntegrityHelper(
          * @param responseString 返回的数据，若需自定义成功状态可以使用
          */
         fun onSuccess(integrityResult: IntegrityResult, responseString: String)
-        fun onFailure(e: IntegrityException)
+        fun onFailure(e: IntegrityException, rawExp: Exception)
     }
 
 }
