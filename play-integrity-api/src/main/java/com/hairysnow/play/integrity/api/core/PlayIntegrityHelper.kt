@@ -127,7 +127,8 @@ class PlayIntegrityHelper(
                                 jsonObject.optBoolean("isMeetsDeviceIntegrity"),
                                 jsonObject.optBoolean("isMeetsBasicIntegrity")
                             ),
-                            result
+                            result,
+                            nonce
                         )
                     }.onFailure {
                         callbackInternalError(null, nonce, onIntegrityResultListener)
@@ -270,7 +271,7 @@ class PlayIntegrityHelper(
          * @param integrityResult 校验结果
          * @param responseString 返回的数据，若需自定义成功状态可以使用
          */
-        fun onSuccess(integrityResult: IntegrityResult, responseString: String)
+        fun onSuccess(integrityResult: IntegrityResult, responseString: String, nonce: String)
         fun onFailure(e: IntegrityException, rawExp: Exception, nonce: String)
     }
 
