@@ -30,25 +30,27 @@ class PlayIntegrityHelper(
         val integrityManager = IntegrityManagerFactory.create(integrityConfiguration.context)
 
         // Request the integrity token by providing a nonce.
+        val nonce = generateOneTimeRequestNonce()
         val integrityTokenResponse = integrityManager.requestIntegrityToken(
             IntegrityTokenRequest.builder()
-                .setNonce(generateOneTimeRequestNonce())
+                .setNonce(nonce)
                 .build()
         )
         integrityTokenResponse.addOnSuccessListener { integrityTokenResponse1: IntegrityTokenResponse ->
             val integrityToken = integrityTokenResponse1.token()
             logE(String.format("integrityToken:%s", integrityToken))
             integrityToken?.let {
-                requestBackendIntegrityValidation(it, onIntegrityResultListener)
-            } ?: callbackFailure(Exception(), onIntegrityResultListener)
+                requestBackendIntegrityValidation(it, nonce, onIntegrityResultListener)
+            } ?: callbackFailure(Exception(), nonce, onIntegrityResultListener)
         }
         integrityTokenResponse.addOnFailureListener { e: Exception ->
-            callbackFailure(e, onIntegrityResultListener)
+            callbackFailure(e, nonce, onIntegrityResultListener)
         }
     }
 
     fun requestBackendIntegrityValidation(
         integrityToken: String,
+        nonce: String,
         onIntegrityResultListener: OnIntegrityResultListener?
     ) {
         val params = HashMap<String, String>().apply {
@@ -112,7 +114,7 @@ class PlayIntegrityHelper(
         okHttpClientBuilder.build().newCall(request)
             .enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    callbackInternalError(e, onIntegrityResultListener)
+                    callbackInternalError(e, nonce, onIntegrityResultListener)
                 }
 
                 override fun onResponse(call: Call, response: Response) {
@@ -128,7 +130,7 @@ class PlayIntegrityHelper(
                             result
                         )
                     }.onFailure {
-                        callbackInternalError(null, onIntegrityResultListener)
+                        callbackInternalError(null, nonce, onIntegrityResultListener)
                     }
                 }
             })
@@ -136,18 +138,20 @@ class PlayIntegrityHelper(
 
     private fun callbackInternalError(
         e: Exception?,
+        nonce: String,
         onIntegrityResultListener: OnIntegrityResultListener?
     ) {
         callbackFailure(
             IntegrityException(
                 IntegrityErrorCode.INTERNAL_ERROR,
-                e?.message ?: "Unknown Error"
-            ), onIntegrityResultListener
+                e?.message ?: "Unknown Error",
+            ), nonce, onIntegrityResultListener
         )
     }
 
     private fun callbackFailure(
         e: Exception,
+        nonce: String,
         onIntegrityResultListener: OnIntegrityResultListener?
     ) {
         e.takeIf {
@@ -161,7 +165,7 @@ class PlayIntegrityHelper(
                     exp.message
                 )
             )
-            onIntegrityResultListener?.onFailure(exp, exp)
+            onIntegrityResultListener?.onFailure(exp, exp, nonce)
         } ?: let {
             var errorMessage = "Unknown Error"
             var errorCode = IntegrityErrorCode.INTERNAL_ERROR
@@ -235,7 +239,11 @@ class PlayIntegrityHelper(
                     )
                 )
             } ?: logE("integrityTokenResponse failure unknown error:$errorMessage")
-            onIntegrityResultListener?.onFailure(IntegrityException(errorCode, errorMessage), e)
+            onIntegrityResultListener?.onFailure(
+                IntegrityException(errorCode, errorMessage),
+                e,
+                nonce
+            )
         }
     }
 
@@ -263,7 +271,7 @@ class PlayIntegrityHelper(
          * @param responseString 返回的数据，若需自定义成功状态可以使用
          */
         fun onSuccess(integrityResult: IntegrityResult, responseString: String)
-        fun onFailure(e: IntegrityException, rawExp: Exception)
+        fun onFailure(e: IntegrityException, rawExp: Exception, nonce: String)
     }
 
 }
